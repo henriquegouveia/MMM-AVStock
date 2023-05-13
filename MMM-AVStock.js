@@ -73,7 +73,7 @@ Module.register("MMM-AVStock", {
             this.stocks[this.config.symbols[s]] = {} ;
         }
         this.log(this.stocks);
-        this.loaded = false;
+        this.loaded = true;
     },
 
     notificationReceived: function(noti, payload) {
@@ -465,7 +465,7 @@ Module.register("MMM-AVStock", {
     socketNotificationReceived: function(noti, payload) {
         this.log("Notification received: "+noti);
         if (noti == "UPDATE_QUOTE") {
-            this.stocks[payload.symbol]["quote"] = payload.data;
+            this.stocks[payload.symbol]["quote"] = this.formatQuotes(payload.data);
             this.update(payload.symbol);
         } else if (noti == "UPDATE_STOCK") {
             //this.stocks[payload.symbol]["series"] = payload.data;
@@ -813,28 +813,27 @@ Module.register("MMM-AVStock", {
         return colors;
     },
 
-    formatQuotes: function(series) {
-        var l = series.length-1;
-        var stockIndex = this.config.symbols.indexOf(series[l].symbol);
+    formatQuotes: function(quote) {
+        var stockIndex = this.config.symbols.indexOf(quote.symbol);
         var pPrice = this.config.purchasePrice[stockIndex] || 0;
 
         return {
-            date: series[l].date,
-            price: this.formatNumber(series[l].close, this.config.decimals),
-            open: this.formatNumber(series[l].open, this.config.decimals),
-            high: this.formatNumber(series[l].high, this.config.decimals),
-            low: this.formatNumber(series[l].low, this.config.decimals),
-            close: this.formatNumber(series[l-1].close, this.config.decimals),
-            change: this.formatNumber(series[l].change, this.config.decimals),
-            changeP: this.formatNumber(series[l].changeP, 1) + '%',
-            volume: this.formatVolume(series[l].volume, 1),
-            up: series[l].up,
-            hash: series[l].hash,
-            requestTime: series[l].requestTime,
-            symbol: series[l].symbol,
+            date: quote.date,
+            price: this.formatNumber(quote.close, this.config.decimals),
+            open: this.formatNumber(quote.open, this.config.decimals),
+            high: this.formatNumber(quote.high, this.config.decimals),
+            low: this.formatNumber(quote.low, this.config.decimals),
+            close: this.formatNumber(quote.close, this.config.decimals),
+            change: this.formatNumber(quote.change, this.config.decimals),
+            changeP: quote.changeP,
+            volume: this.formatVolume(quote.volume, 1),
+            up: quote.up,
+            hash: quote.hash,
+            requestTime: quote.requestTime,
+            symbol: quote.symbol,
             pPrice: (pPrice > 0) ? this.formatNumber(pPrice, this.config.decimals) : '--',
-            perf2P: (pPrice > 0) ? this.formatNumber((100 - (series[l].close/pPrice)*100), 1) + '%' : '--',
-            profit: (pPrice < parseFloat(series[l].close))
+            perf2P: (pPrice > 0) ? this.formatNumber((100 - (quote.close/pPrice)*100), 1) + '%' : '--',
+            profit: (pPrice < parseFloat(quote.close))
         }
     },
 
